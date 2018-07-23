@@ -1,0 +1,12 @@
+#! /usr/bin/python
+
+# backup tool
+# irfan
+
+import sys
+import os
+import getpass
+
+def usage():
+  """ print usage informaton """
+  print "usage: [host]|paths"
