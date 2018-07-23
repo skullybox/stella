@@ -1,0 +1,176 @@
+#! /usr/bin/python
+
+# file encryption tool
+# irfan
+
+""" this module encrypts/ decrypts files """
+
+import sys
+import os
+import getpass
+import pickle
+from Crypto import Random
+from Crypto.Cipher import AES
+
+
+def usage():
+    """ prints usage information """
+    print "usage: [file]"
+    print "  the mode of operation (encryption vs. decryption)"
+    print "  is determined by the file extention"
+    print "  encrypted files have a '.bb' extention"
+
+
+def determine_mode(file_path):
+    """ determines the mode of operation for encryption or decryption """
+
+    file_ext = file_path.split('.').pop()
+
+    # if file extention is 'bb' set to decrypt
+    if file_ext == "bb":
+        return 1
+    return 0
+
+
+def encrypt(in_file):
+    """ encrypt the file and output to new file """
+
+    f = open(in_file, "rb")
+
+    f.seek(0, os.SEEK_END)
+    fsz = 0L
+    fsz += f.tell()
+    f.seek(0, os.SEEK_SET)
+    print "determined file size:", fsz, "bytes"
+
+    # get the password
+    p1 = getpass.getpass("password:")
+    p2 = getpass.getpass("confirm:")
+    salt = Random.new().read(16)
+
+    if p1 != p2:
+        print "password do not match!"
+        return
+
+    if len(p1) >= 32:
+        password = (bytearray(0))
+        password.extend(p1[:32])
+    else:
+        password = (bytearray(32 - len(p1)))
+        password.extend(p1)
+
+    # open file for encrypted output
+    out_file_path = in_file + ".bb"
+    try:
+        out_file = open(out_file_path, "w+b")
+    except:
+        print "Could not write to:", out_file_path
+        f.close()
+        return
+
+    # begin file encryption
+    pickle.dump(fsz, out_file)
+    pickle.dump(salt, out_file)
+
+    # setup crypto
+    aes = AES.new(password.decode("utf-8"), AES.MODE_CBC, salt)
+
+    block_count = 1L
+    bytes_in = f.read(1024)
+    
+    while bytes_in:
+        sys.stdout.write("\rencrypting block: %lu" % block_count)
+        sys.stdout.flush()
+        block_count += 1
+
+        if len(bytes_in)%16 > 0:
+            enc_block = bytearray(16-(len(bytes_in)%16))
+        else:
+            enc_block = bytearray(0)
+        enc_block.extend(bytes_in)
+
+        pickle.dump(aes.encrypt(bytes(enc_block)), out_file)
+
+        bytes_in = f.read(1024)
+
+    print ""
+    f.close()
+    out_file.close()
+    return
+
+
+def decrypt(in_file):
+    """ decrypt the file and output file without .bb extention """
+
+    # get the password
+    p1 = getpass.getpass("password:")
+    if len(p1) >= 32:
+        password = (bytearray(0))
+        password.extend(p1[:32])
+    else:
+        password = (bytearray(32 - len(p1)))
+        password.extend(p1)
+
+    f = open(in_file, "rb")
+
+    # output file
+    fout = open(in_file[:-3], "w+b")
+
+    try:
+        fsz = pickle.load(f)
+        salt = pickle.load(f)
+        aes = AES.new(password.decode("utf-8"), AES.MODE_CBC, salt)
+
+        bytes_in = aes.decrypt(pickle.load(f))
+        block_count = 1L
+        while bytes_in:
+            sys.stdout.write("\rdecrypting block: %lu" % block_count)
+            sys.stdout.flush()
+            block_count += 1
+            if fsz > len(bytes_in):
+                fout.write(bytes_in)
+                fsz -= len(bytes_in)
+            else:
+                write_diff = len(bytes_in) - fsz
+                fout.write(bytes_in[write_diff:])
+                
+            bytes_in = aes.decrypt(pickle.load(f))
+
+    except:
+        f.close()
+
+    print ""
+    f.close()
+    fout.close()
+
+    return
+
+
+def main(argv):
+    """ main function that calls our crypto functions """
+    if not argv:
+        usage()
+        return
+
+    # determine the mode
+    mode = determine_mode(argv[0])
+
+    # open the file check
+    try:
+        f = open(argv[0], "rb")
+        f.close()
+    except:
+        print "Error opening file:", argv[0]
+        return
+
+    # encrypt
+    if mode == 0:
+        print "using encryption mode on:", argv[0]
+        encrypt(argv[0])
+    if mode == 1:
+        print "using decryption mode on:", argv[0]
+        decrypt(argv[0])
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
