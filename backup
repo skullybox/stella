@@ -8,6 +8,7 @@ import os
 import time
 import getpass
 import tarfile
+import paramiko
 
 def usage():
   """ print usage informaton """
@@ -40,8 +41,22 @@ def begin_archive(argv):
 
 def do_archive(host, tar, paths):
 
+  print "connecting to host:",host + "."
+  ssh_client = paramiko.SSHClient()
+  ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+  print "--------------------"
+  print "using user:", os.environ['USER']
+  print "we will try your login password or your ssh key.."
+  pass_in = getpass.getpass("provide pass for user|key:")
+  print "--------------------"
+
+  ssh_client.connect(host, 22, os.environ['USER'], pass_in)
+
   return
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+
