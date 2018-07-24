@@ -5,16 +5,42 @@
 
 import sys
 import os
+import time
 import getpass
+import tarfile
 
 def usage():
   """ print usage informaton """
-  print "usage: tag|paths"
+  print "usage: host tag paths"
 
 def main(argv):
-    if not argv:
-        usage()
-        return
+  if not argv:
+    usage()
+    return
+  begin_archive(argv)
+
+
+def create_archive(arch_name, paths):
+
+  print "using archive:", arch_name,"..."
+  print "using paths:",":".join(paths),"..."
+
+  tar = tarfile.open(arch_name, "w")
+
+  return tar,paths
+
+
+def begin_archive(argv):
+  arch_file_name = argv[0] + "_" + argv[1] + "_" + str(time.time()) + ".tar.gz"
+  tar, paths = create_archive(arch_file_name, argv[2:])
+
+  do_archive(argv[0],tar,paths)
+
+  return
+
+def do_archive(host, tar, paths):
+
+  return
 
 
 if __name__ == "__main__":
