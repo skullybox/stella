@@ -9,4 +9,13 @@ import getpass
 
 def usage():
   """ print usage informaton """
-  print "usage: [host]|paths"
+  print "usage: tag|paths"
+
+def main(argv):
+    if not argv:
+        usage()
+        return
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
