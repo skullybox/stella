@@ -89,7 +89,7 @@ def encrypt(in_file):
             enc_block = bytearray(0)
         enc_block.extend(bytes_in)
 
-        pickle.dump(aes.encrypt(bytes(enc_block)), out_file)
+        out_file.write(aes.encrypt(bytes(enc_block)))
 
         bytes_in = f.read(1024)
 
@@ -121,7 +121,7 @@ def decrypt(in_file):
         salt = pickle.load(f)
         aes = AES.new(password.decode("utf-8"), AES.MODE_CBC, salt)
 
-        bytes_in = aes.decrypt(pickle.load(f))
+        bytes_in = aes.decrypt(f.read(1024))
         block_count = 1L
         while bytes_in:
             sys.stdout.write("\rdecrypting block: %lu" % block_count)
@@ -134,7 +134,7 @@ def decrypt(in_file):
                 write_diff = len(bytes_in) - fsz
                 fout.write(bytes_in[write_diff:])
                 
-            bytes_in = aes.decrypt(pickle.load(f))
+            bytes_in = aes.decrypt(f.read(1024))
 
     except:
         f.close()
