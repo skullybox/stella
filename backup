@@ -47,8 +47,11 @@ def do_archive(host, tar, paths):
 
   print "--------------------"
   print "using user:", os.environ['USER']
-  print "we will try your login password or your ssh key.."
-  pass_in = getpass.getpass("provide pass for user|key:")
+  if os.getenv('PARAMIKO_PASS') is None:
+    print "we will try your login password or your ssh key.."
+    pass_in = getpass.getpass("provide pass for user|key:")
+  else:
+    pass_in = os.environ['PARAMIKO_PASS']
   print "--------------------"
 
   ssh_client.connect(host, 22, os.environ['USER'], pass_in)
