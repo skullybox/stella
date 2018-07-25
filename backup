@@ -18,6 +18,10 @@ def main(argv):
   if not argv:
     usage()
     return
+  if len(argv) < 3:
+    usage()
+    return
+
   begin_archive(argv)
 
 
