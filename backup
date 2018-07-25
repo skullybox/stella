@@ -58,7 +58,25 @@ def do_archive(host, tar, paths):
     pass_in = os.environ['PARAMIKO_PASS']
   print "--------------------"
 
-  ssh_client.connect(host, 22, os.environ['USER'], pass_in)
+  try:
+    ssh_client.connect(host, 22, os.environ['USER'], pass_in)
+  except:
+    print "Error with SSH connection"
+    return
+
+  sudo_pass_in = getpass.getpass("sudo password:")
+
+
+  # begin processing remote files
+  for p in paths:
+    print "processing path:",p,"..."
+    stdin, stdout, stderr = ssh_client.exec_command("sudo find " + p + " -type f -name \"*.*\" -print", get_pty=True)
+    stdin.write(sudo_pass_in + "\n")
+    stdin.flush()
+
+    file_list = stdout.read().splitlines()
+    for line in file_list:
+        print line
 
   return
 
