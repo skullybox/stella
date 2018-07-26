@@ -7,7 +7,6 @@ import sys
 import os
 import time
 import getpass
-import tarfile
 import paramiko
 
 def usage():
@@ -30,20 +29,18 @@ def create_archive(arch_name, paths):
   print "using archive:", arch_name,"..."
   print "using paths:",":".join(paths),"..."
 
-  tar = tarfile.open(arch_name, "w")
-
-  return tar,paths
+  return paths
 
 
 def begin_archive(argv):
   arch_file_name = argv[0] + "_" + argv[1] + "_" + str(time.time()) + ".tar.gz"
-  tar, paths = create_archive(arch_file_name, argv[2:])
+  paths = create_archive(arch_file_name, argv[2:])
 
-  do_archive(argv[0],tar,paths)
+  do_archive(argv[0],paths, arch_file_name)
 
   return
 
-def do_archive(host, tar, paths):
+def do_archive(host, paths, archive_name):
 
   print "connecting to host:",host + "."
   ssh_client = paramiko.SSHClient()
@@ -66,26 +63,23 @@ def do_archive(host, tar, paths):
 
   sudo_pass_in = getpass.getpass("sudo password:")
 
-
   # begin processing remote files
   for p in paths:
     print "processing path:",p,"..."
-    stdin, stdout, stderr = ssh_client.exec_command("sudo find " + p + " -type f -name \"*.*\" -print", get_pty=True)
+    stdin, stdout, stderr = ssh_client.exec_command("sudo -S find " + p + " -type f -name \"*.*\" -print -exec tar -rvf " + archive_name + " {} \;", get_pty=True)
     stdin.write(sudo_pass_in + "\n")
     stdin.flush()
+    
+  try:
+    # begin transfering archive
+    sftp_client = ssh_client.open_sftp()
+    sftp_client.get(archive_name, archive_name)
 
-    file_list = stdout.read().splitlines()
-    for fileItem in file_list:
-        sftp_client = ssh_client.open_sftp()
-
-        print "--",fileItem
-
-        file_info = sftp_client.stat(fileItem)
-        #print inf.st_mode
-        #my_file = sftp_client.file(line, 'r')
-        #if my_file.stat
-        #print my_file.next()
-
+    # clean-up archive
+    stdin, stdout, stderr = ssh_client.exec_command("rm " + archive_name)
+  except:
+    pass
+    
   return
 
 
