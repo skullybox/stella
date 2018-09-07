@@ -9,9 +9,12 @@ import time
 import getpass
 import paramiko
 
+# Globals
+STRING_QUERY_MODE = False
+
 def usage():
   """ print usage informaton """
-  print "usage: host tag paths"
+  print "usage: host tag [-q query string] paths"
 
 def main(argv):
   if not argv:
@@ -20,6 +23,11 @@ def main(argv):
   if len(argv) < 3:
     usage()
     return
+
+  # check for query string param
+  if len(argv) > 3:
+    if argv[2] == "-q":
+      STRING_QUERY_MODE = True
 
   begin_archive(argv)
 
@@ -33,7 +41,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def create_archive(arch_name, paths):
+def get_paths(arch_name, paths):
 
   print bcolors.OKGREEN + "using archive:" + bcolors.ENDC, arch_name,"..."
   print bcolors.OKGREEN + "using paths:" + bcolors.ENDC, ":".join(paths),"..."
@@ -43,14 +51,20 @@ def create_archive(arch_name, paths):
 
 def begin_archive(argv):
   arch_file_name = argv[0] + "_" + argv[1] + "_" + str(time.time()) + ".tar"
-  paths = create_archive(arch_file_name, argv[2:])
+  q_str = ""
 
-  do_archive(argv[0],paths, arch_file_name)
+  if STRING_QUERY_MODE:
+    paths = get_paths(arch_file_name, argv[4:])
+    q_str = argv[4]
+  else:
+    paths = get_paths(arch_file_name, argv[2:])
+
+  do_archive(argv[0],paths, arch_file_name, q_str)
 
   return
 
 
-def do_archive(host, paths, archive_name):
+def do_archive(host, paths, archive_name, query_string):
 
   print bcolors.WARNING + "connecting to host:" + bcolors.ENDC,host + "."
   ssh_client = paramiko.SSHClient()
@@ -78,7 +92,12 @@ def do_archive(host, paths, archive_name):
   # begin processing remote files
   for p in paths:
     print bcolors.OKGREEN + "processing path:" + bcolors.ENDC ,p,"..."
-    stdin, stdout, stderr = ssh_client.exec_command("sudo -S find " + p + " -type f -name \"*.*\" -print -exec tar -rf /tmp/" + archive_name + " {}  2>/dev/null \;", get_pty=True)
+    
+    if STRING_QUERY_MODE:
+      stdin, stdout, stderr = ssh_client.exec_command("sudo -S find " + p + " -type f -name \""+ query_string +"\" -print -exec tar -rf /tmp/" + archive_name + " {}  2>/dev/null \;", get_pty=True)
+    else:
+      stdin, stdout, stderr = ssh_client.exec_command("sudo -S find " + p + " -type f -name \"*.*\" -print -exec tar -rf /tmp/" + archive_name + " {}  2>/dev/null \;", get_pty=True)
+    
     time.sleep(2)
     stdin.write(sudo_pass_in + "\n")
     stdin.flush()
