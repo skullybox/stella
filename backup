@@ -17,6 +17,7 @@ def usage():
   print "usage: host tag [-q query string] paths"
 
 def main(argv):
+  global STRING_QUERY_MODE
   if not argv:
     usage()
     return
@@ -26,7 +27,7 @@ def main(argv):
 
   # check for query string param
   if len(argv) > 3:
-    if argv[2] == "-q":
+    if argv[2] == "-p":
       STRING_QUERY_MODE = True
 
   begin_archive(argv)
@@ -50,15 +51,19 @@ def get_paths(arch_name, paths):
 
 
 def begin_archive(argv):
+  global STRING_QUERY_MODE
   arch_file_name = argv[0] + "_" + argv[1] + "_" + str(time.time()) + ".tar"
   q_str = ""
 
   if STRING_QUERY_MODE:
     paths = get_paths(arch_file_name, argv[4:])
-    q_str = argv[4]
+    q_str = argv[3]
+    print "query_string: " + q_str
   else:
     paths = get_paths(arch_file_name, argv[2:])
+    q_str = ""
 
+    
   do_archive(argv[0],paths, arch_file_name, q_str)
 
   return
@@ -66,6 +71,7 @@ def begin_archive(argv):
 
 def do_archive(host, paths, archive_name, query_string):
 
+  global STRING_QUERY_MODE
   print bcolors.WARNING + "connecting to host:" + bcolors.ENDC,host + "."
   ssh_client = paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -77,7 +83,7 @@ def do_archive(host, paths, archive_name, query_string):
     pass_in = getpass.getpass("provide pass for user|key:")
   else:
     pass_in = os.environ['PARAMIKO_PASS']
-    sudo_pass_in = os.environ['PARAMIKO_PASS']
+    sudo_pass_in = os.environ['PARAMIKO_SPASS']
   print "--------------------"
 
   try:
@@ -110,6 +116,9 @@ def do_archive(host, paths, archive_name, query_string):
     bytes_tx = os.path.getsize(archive_name)
     if bytes_tx == 0:
         print bcolors.WARNING + archive_name,"is zero bytes :( -- error?" + bcolors.ENDC
+        file = open("error.txt","a")
+        file.write(host);
+        file.close();
     else:
         print bcolors.OKBLUE + "transfered",bytes_tx,"bytes" + bcolors.ENDC
 
@@ -119,7 +128,10 @@ def do_archive(host, paths, archive_name, query_string):
     stdin.flush()
   except:
       print bcolors.FAIL + archive_name,"backup :( -- error?" + bcolors.ENDC
-    
+      file = open("error.txt","a")
+      file.write(host);
+      file.close();
+
   return
 
 
