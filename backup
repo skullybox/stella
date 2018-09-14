@@ -75,6 +75,9 @@ def do_archive(host, paths, archive_name, query_string):
   print bcolors.WARNING + "connecting to host:" + bcolors.ENDC,host + "."
   ssh_client = paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+  pass_in = ""
+  sudo_pass_in = ""
+  try_sudo_pass = False
 
   print "--------------------"
   print "using user:", os.environ['USER']
@@ -87,10 +90,16 @@ def do_archive(host, paths, archive_name, query_string):
   print "--------------------"
 
   try:
+    try_sudo_pass = True
     ssh_client.connect(host, 22, os.environ['USER'], pass_in)
+    try_sudo_pass = False
   except:
     print "Error with SSH connection"
     return
+
+  if try_sudo_pass:
+    print "Trying sudo pass..."
+    ssh_client.connect(host, 22, os.environ['USER'], sudo_pass_in)
 
   if os.getenv('PARAMIKO_PASS') is None:
     sudo_pass_in = getpass.getpass("sudo password:")
@@ -129,7 +138,7 @@ def do_archive(host, paths, archive_name, query_string):
   except:
       print bcolors.FAIL + archive_name,"backup :( -- error?" + bcolors.ENDC
       file = open("error.txt","a")
-      file.write(host);
+      file.write(host+"\n");
       file.close();
 
   return
