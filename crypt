@@ -15,10 +15,10 @@ from Crypto.Cipher import AES
 
 def usage():
     """ prints usage information """
-    print "usage: [file]"
-    print "  the mode of operation (encryption vs. decryption)"
-    print "  is determined by the file extention"
-    print "  encrypted files have a '.bb' extention"
+    print("usage: [file]")
+    print("  the mode of operation (encryption vs. decryption)")
+    print("  is determined by the file extention")
+    print("  encrypted files have a '.bb' extention")
 
 
 def determine_mode(file_path):
@@ -38,10 +38,10 @@ def encrypt(in_file):
     f = open(in_file, "rb")
 
     f.seek(0, os.SEEK_END)
-    fsz = 0L
+    fsz = 0
     fsz += f.tell()
     f.seek(0, os.SEEK_SET)
-    print "determined file size:", fsz, "bytes"
+    print("determined file size:", fsz, "bytes"
 
     # get the password
     p1 = getpass.getpass("password:")
@@ -49,7 +49,7 @@ def encrypt(in_file):
     salt = Random.new().read(16)
 
     if p1 != p2:
-        print "password do not match!"
+        print("password do not match!"
         return
 
     if len(p1) >= 32:
@@ -64,7 +64,7 @@ def encrypt(in_file):
     try:
         out_file = open(out_file_path, "w+b")
     except:
-        print "Could not write to:", out_file_path
+        print("Could not write to:", out_file_path
         f.close()
         return
 
@@ -93,7 +93,7 @@ def encrypt(in_file):
 
         bytes_in = f.read(1024)
 
-    print ""
+    print("")
     f.close()
     out_file.close()
     return
@@ -139,7 +139,7 @@ def decrypt(in_file):
     except:
         f.close()
 
-    print ""
+    print("")
     f.close()
     fout.close()
 
@@ -160,15 +160,15 @@ def main(argv):
         f = open(argv[0], "rb")
         f.close()
     except:
-        print "Error opening file:", argv[0]
+        print("Error opening file:", argv[0])
         return
 
     # encrypt
     if mode == 0:
-        print "using encryption mode on:", argv[0]
+        print("using encryption mode on:", argv[0])
         encrypt(argv[0])
     if mode == 1:
-        print "using decryption mode on:", argv[0]
+        print("using decryption mode on:", argv[0])
         decrypt(argv[0])
 
 

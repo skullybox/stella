@@ -14,7 +14,7 @@ STRING_QUERY_MODE = False
 
 def usage():
   """ print usage informaton """
-  print "usage: host tag [-q query string] paths"
+  print("usage: host tag [-q query string] paths"
 
 def main(argv):
   global STRING_QUERY_MODE
@@ -58,7 +58,7 @@ def begin_archive(argv):
   if STRING_QUERY_MODE:
     paths = get_paths(arch_file_name, argv[4:])
     q_str = argv[3]
-    print "query_string: " + q_str
+    print("query_string: " + q_str
   else:
     paths = get_paths(arch_file_name, argv[2:])
     q_str = ""
@@ -72,33 +72,33 @@ def begin_archive(argv):
 def do_archive(host, paths, archive_name, query_string):
 
   global STRING_QUERY_MODE
-  print bcolors.WARNING + "connecting to host:" + bcolors.ENDC,host + "."
+  print(bcolors.WARNING + "connecting to host:" + bcolors.ENDC,host + ".")
   ssh_client = paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   pass_in = ""
   sudo_pass_in = ""
   try_sudo_pass = False
 
-  print "--------------------"
-  print "using user:", os.environ['USER']
+  print("--------------------")
+  print("using user:", os.environ['USER'])
   if os.getenv('PARAMIKO_PASS') is None:
-    print "we will try your login password or your ssh key.."
+    print("we will try your login password or your ssh key..")
     pass_in = getpass.getpass("provide pass for user|key:")
   else:
     pass_in = os.environ['PARAMIKO_PASS']
     sudo_pass_in = os.environ['PARAMIKO_SPASS']
-  print "--------------------"
+  print("--------------------")
 
   try:
     try_sudo_pass = True
     ssh_client.connect(host, 22, os.environ['USER'], pass_in)
     try_sudo_pass = False
   except:
-    print "Error with SSH connection"
+    print("Error with SSH connection")
     return
 
   if try_sudo_pass:
-    print "Trying sudo pass..."
+    print("Trying sudo pass...")
     ssh_client.connect(host, 22, os.environ['USER'], sudo_pass_in)
 
   if os.getenv('PARAMIKO_PASS') is None:
@@ -106,7 +106,7 @@ def do_archive(host, paths, archive_name, query_string):
 
   # begin processing remote files
   for p in paths:
-    print bcolors.OKGREEN + "processing path:" + bcolors.ENDC ,p,"..."
+    print bcolors.OKGREEN + "processing path:" + bcolors.ENDC ,p,"...")
     
     if STRING_QUERY_MODE:
       stdin, stdout, stderr = ssh_client.exec_command("sudo -S find " + p + " -type f -name \""+ query_string +"\" -print -exec tar -rf /tmp/" + archive_name + " {}  2>/dev/null \;", get_pty=True)
@@ -124,19 +124,19 @@ def do_archive(host, paths, archive_name, query_string):
 
     bytes_tx = os.path.getsize(archive_name)
     if bytes_tx == 0:
-        print bcolors.WARNING + archive_name,"is zero bytes :( -- error?" + bcolors.ENDC
+        print(bcolors.WARNING + archive_name,"is zero bytes :( -- error?" + bcolors.ENDC)
         file = open("error.txt","a")
         file.write(host);
         file.close();
     else:
-        print bcolors.OKBLUE + "transfered",bytes_tx,"bytes" + bcolors.ENDC
+        print(bcolors.OKBLUE + "transfered",bytes_tx,"bytes" + bcolors.ENDC)
 
     # clean-up archive
     stdin, stdout, stderr = ssh_client.exec_command("sudo -S rm /tmp/" + archive_name)
     stdin.write(sudo_pass_in + "\n")
     stdin.flush()
   except:
-      print bcolors.FAIL + archive_name,"backup :( -- error?" + bcolors.ENDC
+      print(bcolors.FAIL + archive_name,"backup :( -- error?" + bcolors.ENDC)
       file = open("error.txt","a")
       file.write(host+"\n");
       file.close();
